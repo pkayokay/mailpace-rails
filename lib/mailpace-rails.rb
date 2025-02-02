@@ -35,7 +35,8 @@ module Mailpace
           references: mail.header['References'].to_s,
           list_unsubscribe: mail.header['list_unsubscribe'].to_s,
           attachments: format_attachments(mail.attachments),
-          tags: mail.header['tags'].to_s
+          tags: mail.header['tags'].to_s,
+          metadata: parse_metadata(mail.header['metadata'])
         }.delete_if { |_key, value| value.blank? }.to_json,
         headers: {
           'User-Agent' => "MailPace Rails Gem v#{Mailpace::Rails::VERSION}",
@@ -91,6 +92,16 @@ module Mailpace
       else
         # Mail <= 2.7.x
         obj&.address_list
+      end
+    end
+
+    def parse_metadata(metadata)
+      return unless metadata.present?
+
+      begin
+        JSON.parse(metadata.value)
+      rescue JSON::ParserError
+        nil
       end
     end
 

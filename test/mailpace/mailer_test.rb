@@ -276,4 +276,29 @@ class Mailpace::Rails::Test < ActiveSupport::TestCase
       req.headers['Idempotency-Key'].nil?
     end
   end
+
+  test 'supports metadata' do
+    t = TestMailer.welcome_email
+    t.header['metadata'] = { 'key' => 'value', 'key2' => 'value2' }.to_json
+    t.deliver!
+
+    assert_requested(
+      :post, 'https://app.mailpace.com/api/v1/send',
+      times: 1
+    ) do |req|
+      JSON.parse(req.body)['metadata'] == { 'key' => 'value', 'key2' => 'value2' }
+    end
+  end
+
+  test 'does not send metadata if metadata not supplied' do
+    t = TestMailer.welcome_email
+    t.deliver!
+
+    assert_requested(
+      :post, 'https://app.mailpace.com/api/v1/send',
+      times: 1
+    ) do |req|
+      JSON.parse(req.body)['metadata'].nil?
+    end
+  end
 end
